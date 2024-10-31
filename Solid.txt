@@ -1,18 +1,54 @@
 Task 1: Analyze the Code
 
-    Objective: Review the provided code and identify where it violates any of the SOLID principles. Consider aspects like class responsibilities, method functionalities, dependency management, and object substitution.
+class SystemManager {
+    processOrder(order) {
+        if (order.type == "standard") {
+            verifyInventory(order);
+            processStandardPayment(order);
+        } else if (order.type == "express") {
+            verifyInventory(order);
+            processExpressPayment(order, "highPriority");
+        }
+        updateOrderStatus(order, "processed");
+        notifyCustomer(order);
+    }
 
-Task 2: Refactor the Code
+    verifyInventory(order) {
+        // Checks inventory levels
+        if (inventory < order.quantity) {
+            throw new Error("Out of stock");
+        }
+    }
 
-    Objective: Modify the code to address the identified violations. Ensure each component or class adheres more closely to the SOLID principles. Aim to enhance the system’s overall design in terms of scalability, flexibility, and maintainability.
+    processStandardPayment(order) {
+        // Handles standard payment processing
+        if (paymentService.process(order.amount)) {
+            return true;
+        } else {
+            throw new Error("Payment failed");
+        }
+    }
 
-Task 3: Document Your Changes
+    processExpressPayment(order, priority) {
+        // Handles express payment processing
+        if (expressPaymentService.process(order.amount, priority)) {
+            return true;
+        } else {
+            throw new Error("Express payment failed");
+        }
+    }
 
-    Objective: For each modification you make, provide a detailed explanation of:
-        What the issue was.
-        Which SOLID principle it violated.
-        How your change addresses this violation.
-        The benefits your changes bring to the system’s architecture.
+    updateOrderStatus(order, status) {
+        // Updates the order status in the database
+        database.updateOrderStatus(order.id, status);
+    }
+
+    notifyCustomer(order) {
+        // Sends an email notification to the customer
+        emailService.sendEmail(order.customerEmail, "Your order has been processed.");
+    }
+}
+
 
 
 Task 2: Refactor the Code
@@ -107,10 +143,7 @@ function main() {
     OrderProcessor orderProcessor = new OrderProcessor(paymentProcessor, inventoryService, orderStatusUpdater, customerNotifier)
     orderProcessor.processOrder(order)
 }
-
-
-
-
+###############################################################################################################
 Task 3: Document Your Changes
 
 Task 1: Analize the Code
