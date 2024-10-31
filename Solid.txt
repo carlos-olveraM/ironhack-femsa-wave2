@@ -49,7 +49,7 @@ class SystemManager {
     }
 }
 
-
+###############################################################################################################
 
 Task 2: Refactor the Code
 
@@ -143,10 +143,9 @@ function main() {
     OrderProcessor orderProcessor = new OrderProcessor(paymentProcessor, inventoryService, orderStatusUpdater, customerNotifier)
     orderProcessor.processOrder(order)
 }
+
 ###############################################################################################################
 Task 3: Document Your Changes
-
-Task 1: Analize the Code
 
 Issue 1
 - Principio no respetado: Single Responsability Principle (SRP)
@@ -168,7 +167,7 @@ Issue 2
 - Principio no respetado: Open/Closed Principle ()
 - ¿Cual es el issue?: Este diseño no permite extensión de para nuevos metodos pago ya que  eque está estrechamente relacionado a la clase SystemManager
 - Modificación: Se crea la interfaz PaymentProcessor que implementan las dos clases  de PaymentProcesor. Se pueden agregar nuevos métodos de pago solo creando nuevas clase que implementen la interfaz.
-- Beneficios: Se pueden implmentar nuevos métodos de pago sin modificar el código existente
+- Beneficios: Se pueden implementar nuevos métodos de pago sin modificar el código existente
 
 
 Issue 3
@@ -186,7 +185,7 @@ No existen interfaces definidas, lo cual significa que si se quieres sustituir u
 
 Issue 5
 
-- Princpio no respetado: Dependency Inversion Principle (DIP
+- Princpio no respetado: Dependency Inversion Principle (DIP)
 La clase SystemManager depende altamente de la implementación de servicios de bajo nivel como servicios de pagos y actualización de bases de datos.
 - Modificación:  se crea una interfaz para procesamiento de pagos y clases de servicio separadas permitiendo a los módulos de alto nivel depender de abstracciones en lugar de implementaciones concretas.
 - Beneficios: mejora la flexibilidad y escalabilidad del sistema permitiendo actualizaciones sencillas.
@@ -196,14 +195,3 @@ Los beneficios de las modificaciones a la arquitectura del sistema son:
 2.	Escalabilidad: las nuevas funcionalidades pueden ser agregadas con cambios mínimos
 3.	Mejoras en las pruebas cada componente puede ser probado de manera independiente facilitando las unidad las pruebas unitarias y reduciendo dependencias
 4.	Flexibilidad la arquitectura se puede adaptar a cambios y requerimientos.
-
-
-
-
-
-
-
-
-
-    
-    
