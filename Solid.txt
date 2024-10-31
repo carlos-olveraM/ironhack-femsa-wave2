@@ -1,0 +1,176 @@
+Task 1: Analyze the Code
+
+    Objective: Review the provided code and identify where it violates any of the SOLID principles. Consider aspects like class responsibilities, method functionalities, dependency management, and object substitution.
+
+Task 2: Refactor the Code
+
+    Objective: Modify the code to address the identified violations. Ensure each component or class adheres more closely to the SOLID principles. Aim to enhance the system’s overall design in terms of scalability, flexibility, and maintainability.
+
+Task 3: Document Your Changes
+
+    Objective: For each modification you make, provide a detailed explanation of:
+        What the issue was.
+        Which SOLID principle it violated.
+        How your change addresses this violation.
+        The benefits your changes bring to the system’s architecture.
+
+
+Task 2: Refactor the Code
+
+// PaymentProcessor Interface
+interface PaymentProcessor {
+    process(order)
+}
+
+// StandardPaymentProcessor Class
+class StandardPaymentProcessor implements PaymentProcessor {
+    function process(order) {
+        if (paymentService.process(order.amount)) {
+            return true
+        } else {
+            throw new Error("Payment failed")
+        }
+    }
+}
+// ExpressPaymentProcessor Class
+class ExpressPaymentProcessor implements PaymentProcessor {
+    function process(order) {
+        if (expressPaymentService.process(order.amount, "highPriority")) {
+            return true
+        } else {
+            throw new Error("Express payment failed")
+        }
+    }
+}
+
+// InventoryService Class
+class InventoryService {
+    function verify(order) {
+        if (inventory < order.quantity) {
+            throw new Error("Out of stock")
+        }
+    }
+}
+
+// OrderStatusUpdater Class
+class OrderStatusUpdater {
+    function update(order, status) {
+        database.updateOrderStatus(order.id, status)
+    }
+}
+
+// CustomerNotifier Class
+class CustomerNotifier {
+    function notify(order) {
+        emailService.sendEmail(order.customerEmail, "Your order has been processed.")
+    }
+}
+
+// OrderProcessor Class
+class OrderProcessor {
+    private PaymentProcessor paymentProcessor
+    private InventoryService inventoryService
+    private OrderStatusUpdater orderStatusUpdater
+    private CustomerNotifier customerNotifier
+
+    constructor(PaymentProcessor paymentProcessor, InventoryService inventoryService, 
+                OrderStatusUpdater orderStatusUpdater, CustomerNotifier customerNotifier) {
+        this.paymentProcessor = paymentProcessor
+        this.inventoryService = inventoryService
+        this.orderStatusUpdater = orderStatusUpdater
+        this.customerNotifier = customerNotifier
+    }
+
+    function processOrder(order) {
+        inventoryService.verify(order)
+        paymentProcessor.process(order)
+        orderStatusUpdater.update(order, "processed")
+        customerNotifier.notify(order)
+    }
+}
+
+// Main Logic
+function main() {
+    order = // Get order details
+
+    InventoryService inventoryService = new InventoryService()
+    OrderStatusUpdater orderStatusUpdater = new OrderStatusUpdater()
+    CustomerNotifier customerNotifier = new CustomerNotifier()
+
+    PaymentProcessor paymentProcessor
+    if (order.type == "standard") {
+        paymentProcessor = new StandardPaymentProcessor()
+    } else if (order.type == "express") {
+        paymentProcessor = new ExpressPaymentProcessor()
+    }
+
+    OrderProcessor orderProcessor = new OrderProcessor(paymentProcessor, inventoryService, orderStatusUpdater, customerNotifier)
+    orderProcessor.processOrder(order)
+}
+
+
+
+
+Task 3: Document Your Changes
+
+Task 1: Analize the Code
+
+Issue 1
+- Principio no respetado: Single Responsability Principle (SRP)
+- ¿Cual es el issue?
+La clase SystemManager tiene multiples responsabilidades
+    - Procesamiento de ordenes
+    - Verificación de inventario
+    - Procesamiento de pagos
+    - Actualizar estatus de oden
+    - Notificación de clientes
+- Modificación: 
+    - Se generaron clases separadas para el procesamiento de pagos StandardPaymentProcessor y ExpressPaymentProcessor
+    - Se generó una clase para verificación de inventario
+    - Se crea clase para actualización de estatus OrderStatusUpdater
+    - Por último una nuva clase para notificaciones de cliente CustomerNotifier
+- Beneficios: Cada clase tiene una responsabilidad única haciendo que el codigo se más facil de mantener.
+
+Issue 2
+- Principio no respetado: Open/Closed Principle ()
+- ¿Cual es el issue?: Este diseño no permite extensión de para nuevos metodos pago ya que  eque está estrechamente relacionado a la clase SystemManager
+- Modificación: Se crea la interfaz PaymentProcessor que implementan las dos clases  de PaymentProcesor. Se pueden agregar nuevos métodos de pago solo creando nuevas clase que implementen la interfaz.
+- Beneficios: Se pueden implmentar nuevos métodos de pago sin modificar el código existente
+
+
+Issue 3
+- Princpio no respetado: Liskov Substitution Principle (LSP)
+- ¿Cual es el issue?: Aunque no aplica de forma directa a esta implementación, si usan diferentes tipos de órdenes o métodos de pago sin una interfaz puede ocasionar que estos no sean manejados de manera correcta
+- Modificación: La clase OrderProcessor ahora utiliza la interfaz PaymentProcessor permitiendo que cualquier procesador de pagos se puede implementar y usar.
+- Beneficios: con el cambio mencionado se asegura que las subclases puedan ser utilizadas sin afectar el correcto funcionamiento del programa aumentando la flexibilidad del código.
+
+Issue 4
+
+- Princpio no respetado: Interface Segregation Principle (ISP)
+No existen interfaces definidas, lo cual significa que si se quieres sustituir un servicio se tienen que modificar todos los metodos.
+- Modificación: se separan las responsabilidades en distintas clases cada una de ellas enfocadas en un solo propósito.
+- Beneficios: cada clase depende únicamente de los métodos que utilizan haciendo que el sistema sea más sencillo de adaptar.
+
+Issue 5
+
+- Princpio no respetado: Dependency Inversion Principle (DIP
+La clase SystemManager depende altamente de la implementación de servicios de bajo nivel como servicios de pagos y actualización de bases de datos.
+- Modificación:  se crea una interfaz para procesamiento de pagos y clases de servicio separadas permitiendo a los módulos de alto nivel depender de abstracciones en lugar de implementaciones concretas.
+- Beneficios: mejora la flexibilidad y escalabilidad del sistema permitiendo actualizaciones sencillas.
+
+Los beneficios de las modificaciones a la arquitectura del sistema son:
+1.	 Mantenimiento: del código es más sencilla de leer y comprender haciéndolo más sencillo de modificar 
+2.	Escalabilidad: las nuevas funcionalidades pueden ser agregadas con cambios mínimos
+3.	Mejoras en las pruebas cada componente puede ser probado de manera independiente facilitando las unidad las pruebas unitarias y reduciendo dependencias
+4.	Flexibilidad la arquitectura se puede adaptar a cambios y requerimientos.
+
+
+
+
+
+
+
+
+
+    
+    
