@@ -1,0 +1,186 @@
+Test case 1
+
+TEST UserAuthentication
+  ASSERT_TRUE(authenticate("validUser", "validPass"), "Should succeed with correct credentials")
+  ASSERT_FALSE(authenticate("validUser", "wrongPass"), "Should fail with wrong credentials")
+END TEST
+
+Descripción de áreas de orportunidad
+
+1. Lack of Single Responsibility: La prueba actual combina intentos de autenticación exitosos y fallidos en un solo caso de prueba.
+2. Descriptive Names & Error Messages: El nombre de la prueba en sí UserAuthentication no aclara específicamente qué aspecto de la funcionalidad se está probando, y los mensajes de error podrían ser más descriptivos para proporcionar un mejor contexto.
+3. No Setup and Teardown: no hay ninguna configuraciones que garantice el entorno en el estado correcto antes de ejecutar las pruebas, ni se limpiarlo al terminar.
+4. Exception Handling: No hay pruebas que aborden escenarios de excepciones, por ejemplo, para entradas nulas o errores del sistema.
+5. No Isolated Tests: Las pruebas no son aisladas; si una falla, se afectan los resultados de la otra.
+6. Mocking/Stubs: No se usan mocks ni stubs para simular el entorno o las dependencias..
+
+pseudo código
+
+// Inicializa los recursos necesarios para cada test
+SETUP UserAuthenticationTests
+  mockAuthService = createMockAuthService()
+  Initialize DB with test user "validUser" and password "validPass"
+END SETUP
+
+//Se borran los recursos para garantizar las pruebas
+TEARDOWN UserAuthenticationTests
+  mockAuthService.reset()
+  Clear test users from DB
+END TEARDOWN
+
+//Test independientes
+TEST Authenticate_ValidCredentials_ShouldSucceed
+  ASSERT_TRUE(mockAutshService("validUser", "validPass"), "Authentication should succeed with valid credentials")
+END TEST
+
+//Caso de excepción
+TEST Authenticate_InvalidPassword_ShouldFail
+  ASSERT_FALSE(mockAuthService("validUser", "wrongPass"), "Authentication should fail with an invalid password")
+END TEST
+
+TEST Authenticate_NonExistentUser_ShouldFail
+  ASSERT_FALSE(mockAuthService("nonExistentUser", "somePassword"), "Authentication should fail for non-existent users")
+END TEST
+
+TEST Authenticate_NullUsername_ShouldThrowException
+  EXPECT_THROW(mockAuthService(null, "somePassword"), InvalidInputException, "Should throw exception for null username")
+END TEST
+
+TEST Authenticate_NullPassword_ShouldThrowException
+  EXPECT_THROW(mockAuthService("validUser", null), InvalidInputException, "Should throw exception for null password")
+END TEST
+
+Mejoras
+
+1. Single Responsibility: Cada caso se enfoca una un comportamiento específico de la autenticación
+2. Clear and Descriptive Names: Cada nombre de test describe de forma precisa lo que hará cada prueba.
+3. Setup and Teardown: La sección SETUP y TEARDOWN aseguran un ambiente de pruebas y que estas sean borradas despues de cada prueba.
+4. Exception Handling: Se crean casos para manejar excepciones para asegurar que las pruebas sean robustas en la función de authenticación.
+5. Isolated Tests: Cada caso opera de forma independiente.
+6. Mocking: Se crea un servicio mock para simular las respuestas.
+
+El patron de estraggia (Strategy Pattern) se adapata mejor a pruebas para autentición de usuarios.
+
+
+###########################################################################################
+
+TEST CASE 2
+
+TEST DataProcessing
+  DATA data = fetchData()
+  TRY
+    processData(data)
+    ASSERT_TRUE(data.processedSuccessfully, "Data should be processed successfully")
+  CATCH error
+    ASSERT_EQUALS("Data processing error", error.message, "Should handle processing errors")
+  END TRY
+END TEST
+
+Análisis de caso
+
+1. Lack of Single Responsibility: El caso maneja en una sola ejecución las pruebas exitosas y los errores.
+2. Descriptive Names: El nombre del caso DataProcessing no indica de manera clara los que está evaluando la prueba.
+3. Mixed Logic: Como se menciona en el punto uno, el caso mexcla la lógica de operación normal con el manejo de la excepción en el TRY-CATCH.
+4. No Setup and Teardown: No existe un set up o un tear donw There are no setup or teardown para crear el ambiente apropiado o borra los datos utlizados.
+5. Unclear Error Messages: El contexto para fallo parece ser muy ambiguo yno se inter´reta correctamente.
+6. Isolated Tests: En caso de existir un error, fallaría toda la prueba.
+7. Mocking: No existen mock para simular los datos.
+
+pseudocode
+
+SETUP TestDataProcessing
+  mockDataService = createMockDataService()  // Mock que simula la obtención de los datos
+  mockDataService.setupSuccessfulData()      // El seteo del mock para casos de éxito
+  mockDataService.setupErrorData()           // El seteo de mook para casos de excepción
+END SETUP
+
+TEARDOWN TestDataProcessing
+  mockDataService.clear()                    // Limpieza de los datos
+END TEARDOWN
+
+TEST ProcessData_Success_ShouldSucceed
+  DATA data = mockDataService.fetchData()    // Se obtienen los datos mock
+  PROCESSING_RESULT result = processData(data)
+  ASSERT_TRUE(result.processedSuccessfully, "Data should be processed successfully")
+END TEST
+
+TEST ProcessData_Error_ShouldHandleException
+  DATA errorData = mockDataService.setupErrorData() // Seteo de datos para el error controlado.
+  TRY
+    processData(errorData)
+    FAIL("Expected processing to throw an error, but it succeeded")
+  CATCH error
+    ASSERT_EQUALS("Data processing error", error.message, "Should handle processing errors correctly")
+  END TRY
+END TEST
+
+Los beneficios
+
+1. Single Responsibility: Cada caso ProcessData_Success_ShouldSucceed y ProcessData_Error_ShouldHandleException se enfocan en comportamiento especifico de éxito o manejo de errores.
+2. Descriptive Names: Los casos reflejan claramente las condiciones a testear.
+3. Separation of Concerns: El procesamiento normal y los casos de excepción se dividen en pruebas separadas.
+4. Setup and Teardown: La sección SETUP inicializa los componentes necesarios para los test, por otro lado la sección de TEARDOWN asegura que el ambiente se limpie posterior a la ejecución.
+5. Clear Error Messages: Los mensajes de error generados durante los test indican de foma clara los aspectos del fallo ocurrido.
+6. Isolated Tests: Los test corren de forma independiente de los demás, lo cual garantiza que no el fallo en la ejecución de uno no afecte los demás ejecciones.
+7. Mocking/Stubs: El mockeo de datos en fetchData permite comportamientos controlados para test más confiables.
+
+
+Para este test, se recomienda el patrón de diseño estratégico. Estes patrón de diseño permite encapsular los diferentes algoritmos.
+
+#############################################################################################
+
+Test case 3
+
+TEST UIResponsiveness
+  UI_COMPONENT uiComponent = setupUIComponent(1024)
+  ASSERT_TRUE(uiComponent.adjustsToScreenSize(1024), "UI should adjust to width of 1024 pixels")
+END TEST
+
+Análisis
+
+1. Lack of Single Responsibility: El caso solo valida un solo escenario(1024 pixels), aunque el nombre no lo especifica y en su lugar generaliza 
+2. Limited Scope: El caso no tiene cobertura para otros tamaños de pantallas.
+3. Descriptive Names: El nombre UIResponsiveness no cominica claramente el comportamiento que probará en el componente UI.
+4. No Setup for Various Scenarios: Como se menciona en el punto 2, el caso solo verifica un tamaño de pantalla por lo cual pierde la oportunidad probar diferentes configuraciones de la UI.
+5. No Teardown: La usencia de un teardown permite que se conserven estados residuales lo cual impacta a casos subsecuentes.
+6. Isolated Tests: El test no provee una estructura que permite correr casos de forma independiente.
+7. Clear Error Messages: El mensaje de error es bastante general y no proporciona información relevante.
+8. No Exception Handling: El test no comprueba diferentes escenarios por lo cual no toma en cuenta escenarios que podrían presentarse.
+
+Beneficios
+
+pseudocode
+SETUP TestUIResponsiveness
+  uiComponent = createMockUIComponent()  // Crea un mock para el componente de UI.
+END SETUP
+
+TEARDOWN TestUIResponsiveness
+  uiComponent.cleanup()             // Limpia datos residual despues del test
+END TEARDOWN
+
+TEST AdjustsToGivenWidth_ShouldReturnTrue_WhenWidthIs1024
+  ASSERT_TRUE(uiComponent.adjustsToScreenSize(1024), "UI component should successfully adjust to a width of 1024 pixels")
+END TEST
+
+TEST AdjustsToGivenWidth_ShouldReturnTrue_WhenWidthIs800
+  ASSERT_TRUE(uiComponent.adjustsToScreenSize(800), "UI component should successfully adjust to a width of 800 pixels")
+END TEST
+
+TEST AdjustsToGivenWidth_ShouldReturnTrue_WhenWidthIs1280
+  ASSERT_TRUE(uiComponent.adjustsToScreenSize(1280), "UI component should successfully adjust to a width of 1280 pixels")
+END TEST
+
+TEST AdjustsToGivenWidth_ShouldThrowException_WhenWidthIsNegative
+  EXPECT_THROW(uiComponent.adjustsToScreenSize(-100), InvalidWidthException, "Should throw exception for negative width values")
+END TEST
+
+Explicación 
+
+1. Single Responsibility: Cada test esta enfocado en un escenario especifico oermitiendo  el aislamiento de las funcionalidades.
+2. Expanded Test Cases: Se crean multiples casos que ahora cubren diferentes configuraciones de pantalla.
+3. Descriptive Names: Cada test ndica de forma clara lo que se esta verificando.
+4. Setup for Various Scenarios: La sección SETUP inicializa el cponente de la UI.
+5. Teardown Implemented: La sección de TEARDOWN asegura que toso los casos section ensures that any state from the tests is cleaned up afterward.
+6. Isolated Tests: Cada test opera de forma independiente.
+7. Clear Error Messages: Los mensajes de indican de forma más específica la falla dando un contexto más amplio del mismo.
+8. Exception Handling: El caso de prueba ahora pruba excepciones más robustas.
