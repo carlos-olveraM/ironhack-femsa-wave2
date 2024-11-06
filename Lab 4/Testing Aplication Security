@@ -1,0 +1,164 @@
+Security Scanning Report
+
+FUNCTION authenticateUser(username, password):
+    QUERY database WITH username AND password
+    IF found RETURN True
+    ELSE RETURN False
+
+En este código se pueden obervar varios problemas de seguridad.
+
+1. SQL Injection: Esta implementación hace el query directamente a la base datos utlizando el usuario y el password ingresado por el mismo.
+Impacto: Esto puede llevar a accesos no autorizados, fuga de datos o manipulación de la base de datos
+2. Plain Text Password Storage: El psudocódigo no indica la utlización de hashing o encripción de las contraseñas.
+Impacto: Se pueden compromenter las cuentas de ususarios así como accesos no autorizados.
+3. Error Handling: Lo función no especifica como manejar autenticaciones incorrectas dejando esto oportunidad a que los atacantes puedan adivinar el password.
+Impacto: Riesgo grande de ataques de fuerza bruta.
+4. Lack of Rate Limiting: No hay un indicador que clasifique o limite el proceso de autenticación. Esto permite que los atacantes puedan realizar multiples intento para adivinar las credenciales.
+Impact: Esto puede llevar a un ataque de denegación de servicio o accesos no autorizados por ataques de fuerza bruta.
+
+Plan de mitigación propuesto.
+
+1. Mitigación para Injecciones por SQL: Utilizar queries parametrizados a la base  Use parameterized queries or prepared statements for database queries.
+Implementacion: Modificar el query a la base de datos para utlizar placeholders para que la entrada del usuario sea tratado como datos y no como código ejecutable.
+
+pseudocódigo
+
+QUERY database WITH preparedStatement("SELECT * FROM users WHERE username = ? AND password = ?")
+
+2. Mitigación para Plain Text Password Storage: Implementar un password hashing  y utlizar un algoritmo de encriptado.
+
+pseudocódigo
+
+hashedPassword = hashFunction(password)
+    IF storedHash == hashedPassword RETURN True
+
+3. Mitigación para Error Handling: Implementar mensajes de errore que no indiquen que el usuario o el password es incorrecto.
+Implementaci+on: Devolver un mensaje de error genérico.
+
+pseudocódigo
+
+    IF found THEN RETURN True
+    ELSE RETURN "Authentication failed"
+
+4. Mitigación para Lack of Rate Limiting: Implementar rate limiting para restringir el número de intentos de autenticación para una sola dirección IP.
+Implementacion: Rastrear el nuéro de intentos fallidos de Logib y bloquear de manera temporal y retardar los intentos.
+
+pseudocódigo
+
+    IF failedAttempts > limit THEN BLOCK IP FOR timeInterval
+
+##############################################################################
+
+Designing JWT Authentication:
+        
+DEFINE FUNCTION generateJWT(userCredentials):
+    IF validateCredentials(userCredentials):
+        SET tokenExpiration = currentTime + 3600 // Token expires in one hour
+        RETURN encrypt(userCredentials + tokenExpiration, secretKey)
+    ELSE:
+        RETURN error
+
+El diseño de una autencticación basda en JWT deben incluir algunos elementos claves tales como:
+1. Generación de token seguro
+2. Incluir expiración de token
+3. Validación de token.
+
+pseudocódigo
+
+DEFINE FUNCTION generateJWT(userCredentials):
+    IF validateCredentials(userCredentials):
+        SET tokenExpiration = currentTime + 3600 // Token expira en una hora
+        payload = {
+            "sub": userCredentials.userId,         // Subject: Identificador de ususario
+            "exp": tokenExpiration,                 // Timestamp de expiración
+            "iat": currentTime,                     // timestamp
+            "role": userCredentials.role            // Rol de ususario
+        }
+        RETURN encrypt(payload, secretKey)        // Token codificado
+    ELSE:
+        RETURN error
+
+Explicación de componentes
+
+1. Secure Token Generation: La función generateJWT crea un token después de validar las credenciales del usuarioafter validating the user's credentials. The payload contains the user ID, expiration time, issued time, and optionally the user role.
+Critica: No se especifica como funciona la encripción, se recomienda utlizar un método conmejor seguridad tal como RSA.
+Mejoras: Usar librerías que se adieran a buenas prácticas como Jason Web Token.
+2. Managing Token Expiration: El token expira después de una hora lo cual es un estandard.
+Critica: Una hora podría ser sufuiente para mantener la seguridad, sin embargo para algunas aplicaciones esto podria no ser suficiente lo cual podría resultar en autenticaciones frecuentes.
+Mejoras: Implemnetar unmétodo de refresh token que permitan al usuario obtener accesso sin necesidad de volver a solicitar la autenticación. Esto ayuda a mejorar la experiencia de ususario  y mantiene la seguridad de la aplicación.
+
+Validación de Tokens:
+
+pseudocódigo
+
+DEFINE FUNCTION validateJWT(token):
+    DECODE token USING secretKey
+    IF token is invalid:
+        RETURN error
+    IF currentTime > token.exp:
+        RETURN error // Token expirado
+    RETURN token // Devuelve un token válido
+
+Proceso de validación
+
+1. Decodificación del Token: Validar el token decodificandolo y utlizar la misma llave secreta que fue utlizada en la firma del mismo.
+Critica: Se debe verificar la autenticidad e integradad del token.authenticity.
+Mejora: Se puede implementar validaciones adicionales como el issuer (iss) y el audience (aud).
+2. Validación de expiración: Revisar si el token ha expirado.
+Critica: Esto puede no ser suficiente en caso de problemas de sincronizacón.
+Mejoras: Implementar un periodo de fgracias para la expiración deñ token.
+
+#############################################################################
+
+Data Protection Strategy:
+
+PLAN secureDataCommunication:
+  IMPLEMENT SSL/TLS for all data in transit
+  USE encrypted storage solutions for data at rest
+  ENSURE all data exchanges comply with HTTPS protocols
+
+Secure Data Communication Plan
+
+Objetivo: Proteger los datos cuando se encuentran en transmisión.
+
+1. Implementar SSL/TLS para los datos en transmisión.
+Acciones: 
+- Obtener un certificado válido SSL/TLS Certificate Authority (CA).
+- Configurar los servidores para utlizar HTTPS, esto para asegurar la encripción entre cliente-servidor
+- Redireccionar el tráfico HTTP hacia HTTPS para prevenir transmision de datos en texto plano.
+Implementación: 
+- Habilitar encriptados fuertes tales como AES-256 así como deshabilitar protocolos antiguos SSL 3.0 y TLS 1.0. 
+- Renovar perdiódicamnete los certificados SSL/TLS lo cual previene vulnerabilidades
+2. Utlizar soluciones de encripción de datos almacenados
+Acciones
+- Utilizar encripción para datos sensibles en la base de datos.
+- Seleccionar un estandard de encripción robusto.
+Implementación:
+- Implementar mecanismos de encripción de datos robustos
+- manejo adecuado de la llaves de encripción.
+3. Asegurarse de que todos los datos cumplan con los protocolos HTTPS
+Acciones:
+- Verificar que todas la API y aplicaciones utilicen el protocolo HTTPS para intercacmbio de datos.
+- Utlizar HSTSPara prevenir que se utilicen conexiones HTTP en conexiones seguras.
+Implementación:
+- Configurar headers HSTS en el servidor para garantizar la duración de la comunicación HTTPS.
+- Realizar auditorias de forma regular.
+
+Configuraciones HTTPS y TLS
+
+Objetivo: Asegurar la integridad y la seguridad de los datos.
+
+1. Configurar HTTPS
+- Utilizar un Content Delivery Network (CDN) que soporte HTTPS.
+- Configurar redireccionamiento para asegurar que las peticiones HTTP se redireccionen a HTTPS.
+Implementación de Headers de seguridad: Agregar security headers tales como
+- Content-Security-Policy
+- X-Content-Type-Options
+- X-Frame-Options
+2. Configuración TLS
+- Configurar el servidor para soportar cifrados robustos, evitandos cifrados débiles.
+- implementar Perfect Forward Secrecy (PFS). https://ciberseguridad.com/guias/prevencion-proteccion/perfect-forward-secrecy-pfs/
+
+Pruebas regulares y actualizaciones:
+- Usar herramientas como SSL Labs tpara probar la configuración de SSL/TLS.
+- Monitorear constamente vulnerabilidades y aplicar los parches de seguridad necesarios.
