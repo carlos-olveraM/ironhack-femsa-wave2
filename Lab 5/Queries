@@ -1,0 +1,161 @@
+SQL 1 query
+
+SELECT Orders.OrderID, SUM(OrderDetails.Quantity * OrderDetails.UnitPrice) AS TotalPrice
+FROM Orders
+JOIN OrderDetails ON Orders.OrderID = OrderDetails.OrderID
+WHERE OrderDetails.Quantity > 10
+GROUP BY Orders.OrderID;
+
+Deficiencias
+
+1. Join Completo: El query realiza un JOIN en ORDERS y OrderDetails. Al no haber indices en OrderDetails.OrderID, la base de datos realiza una búsqueda completa de la tabla OrderDetails por cada fila en Orders.
+2. Agrupar antes de filtrar: La operación GROUP BY se realiza despues del JOIN por lo que se podrían agregar a la busqueda más datos de los necesarios.
+
+Optimización del query
+
+1. Indexado:
+- Crear Index OrderDetails.OrderID: Este permite acelerar la condición de JOIN
+- Crear Index OrderDetails.Quantity: ayuda a filtar filas cuando se usa OrderDetails.Quantity > 10.
+2. Filtrado antes: se puede utilizar un Common Table Expression (CTE) para filtrar OrderDetails antes de hacer el JOIN.
+
+SQL Query optimizado
+
+WITH FilteredOrderDetails AS (
+    SELECT OrderID, Quantity, UnitPrice
+    FROM OrderDetails
+    WHERE Quantity > 10
+)
+SELECT Orders.OrderID, SUM(FilteredOrderDetails.Quantity * FilteredOrderDetails.UnitPrice) AS TotalPrice
+FROM Orders
+JOIN FilteredOrderDetails ON Orders.OrderID = FilteredOrderDetails.OrderID
+GROUP BY Orders.OrderID;
+
+Mejoras
+
+1. Filtrado antes con CTE: al agregar CTE en FilteredOrderDetails se filtran las filas con Quantity de 10 o menos antes de hacer el JOIN
+2. Proceso de datos eficiente: al hacer un JOIN con menor cantidad de datos se puede procesar menos datos en total optimizando la utlización de memoria.
+3. Uso de Indexes: al utlizar estos, el desempeño del query mejora significativamente ya que no se debe escanear la tabla completa.
+4. Estrategia de agrupación: La operación GROUP BY  procesa menos datos mejorando y reduciendo el computo requerido.
+*****************************************************************************************************************
+Query 2
+
+SELECT CustomerName 
+FROM Customers 
+WHERE City = 'London' 
+ORDER BY CustomerName;
+
+Deficiencias
+
+1. Falta de indexado en el filtro y ordenamiento de columnas.
+2. Ordenado datos inexistentes.
+3. Se escanea la tabla completa, ya que no no se utlizan indexados apropiados.
+
+Optimización del query
+
+1. Indexing: Crear un indexado en City y en CustomerName para mejorar la velocidad de filtrado para clientes en London y los nombres en CustomerName
+2. Filtrado y ordenamiento: Una vez aplicados los indexes el filtrado y ordenamiento pueden ejecutarse mucho más rápido.
+
+SQL Query optimizado
+
+CREATE INDEX idx_city ON Customers(City);
+CREATE INDEX idx_customer_name ON Customers(CustomerName);
+
+SELECT CustomerName 
+FROM Customers 
+WHERE City = 'London' 
+ORDER BY CustomerName;
+
+Mejoras:
+
+1. Uso de indexados: al agregar el indexado en City la base de datos puede localizar las entradas de los clientes pertenecientes a la Ciudad de London, y al indexar CustomerName la base podrá obtener los datos filtrado y los ordenará de forma sencilla.
+2. Reducción de la carga computacional: El tiempo de ejecución total será reducido debido al acceso rápido que porporcionan los indices creados.
+3. Ejecución simplificada del query:  La sintaxis del query permanece similar y ofrece grandes ventajas con tan solo la adición del indexado.
+
+#######################################################################################################################
+
+NoSQL Query Implementation
+
+Query 1
+
+db.posts
+  .find({ status: "active" }, { title: 1, likes: 1 })
+  .sort({ likes: -1 });
+  
+Ineficiencias
+
+1. Filtrado de toda la tabla: El query filtra posts donde el status = active al no existir un idex en el campo status se requiere hacer un escaneo completo de los documentos para encontrar el estatus active.
+2. Ordenamiento sin indexado: El ordenamiento es realizado en el campo likes en orden descendente, al no existir un indexado en likes, se tiene que realizar un ordenamiento en todos documentos que hagan match en el filtro de estatus.
+3. Recuperación no eficiente de datos no escenciales: El query solo selecciona los campos title y likes pero aun se requieren recuperar y cargar todos los documentos en memoria.
+
+Optimización del query
+
+1. Indexado: al agregar un index en status el campo agilizará el proceso de filtrado permitiendo encontrar todos los post activos.
+2. Indice compuesto: al aplicar esto sobre status y likes se pbtnedrían los siguinetyes beneficios. would be 
+  - status mejora la velocidad de filtrado
+  - likes optimiza el proceso ordenamiento.
+3 Uso de Aggregation Framework: Utilizar este pipeline permite mayor flexibilidad para mejoras en el desempeño cuabndo se utilizan queries complejos como filtering, projection y sorting.
+4. Recuperación eficiente de datos: para la colección de posts se puede utlizar $limit en el aggregation pipeline para otener solo los posts más populares.
+
+NoSQL Query optimizado
+
+// Se crea un indice compuesto para acelerar el filtrado por estatus ordenar por likes
+db.posts.createIndex({ status: 1, likes: -1 });
+// query optimizado usando el aggregation framework
+db.posts.aggregate([
+  { $match: { status: "active" } },  // Filtro por posts activos
+  { $project: { title: 1, likes: 1 } },  // Project solo title y likes
+  { $sort: { likes: -1 } },  // Ordenamiento de likes en modo descendiente
+  { $limit: 10 }  // Limita a los 10 post mmás populares.
+]);
+
+Beneficios
+
+1. Indexes: Al agregar index compuesto en { status: 1, likes: -1 } se otimiza el filtrado y el ordenamiento.
+2. Aggregation Pipeline: Se utiliza el aggregation framework para mayor flexibilidad, y mejorar el filtering, projection, sorting, y limitando los resultado eficientemente.
+3. Desempeño:  El uso de index acelera el filtrado y ordenamientos. Adicional al limitar el resultado, se reducen los datos que se manejan.
+
+*************************************************************************************************************
+Query 2
+
+
+db.users.aggregate([
+  { $match: { status: "active" } },
+  { $group: { _id: "$location", totalUsers: { $sum: 1 } } },
+]);
+
+Ineficiencias
+
+1. Escaneo completo de la colección para $match: la etapa de filtrado $match en status: "active" escanea tods los documentos ya que no cuenta con un indexado.
+2. No hay indexado en $location para $group: la etapa de $group agrupa los resultados por location, sin un indexado en el campo location, se requiere escanear todos los datosdespués del filtrado por status.
+3. Procesamiento de datos: el query solo requiere el conteo de usarios activos por location, sin embargo debe procesar todos los documentos con la condición status: "active".
+4. Falta de Projection para filtrado temprano: el agregation pipeline procesa todos los campos aunque solo se requieren los campos de location y status para las etapas de $match y $group.
+
+Optimización del query
+
+1. Indexado: al agregar indexado a status permite búsquedas más eficientes para encontrar documentos donde status = "active".
+2. Indexado compuesto en status y location: al agregar esto  en status y location se reduce el escaneo optimizando de esta manera las búsquedas.
+3 Uso de etapa Project temnprano: Dado que solo status y location son necesarios para este query el uso de la etapa Project descarta los demás campos mucho antes en el pipeline reduciendo el tamaño de datos que requieren ser procesados.
+4. Uso de $limit: se puede utlizar para enfocarse en los resultados más populares, mejorando el desempeño según los deseado.
+
+Query optimizado
+
+// Crea un indice en status y location para optimizar el filtrado y agrupación.
+db.users.createIndex({ status: 1, location: 1 });
+// Se oprimiza el aggregation query
+db.users.aggregate([
+  // Match solo usuarios activos
+  { $match: { status: "active" } },
+  // Project (selecciona) solo el campo necesario (location)
+  { $project: { location: 1 } },
+  // Agrupa por location y cuenta los usuarios activos.
+  { $group: { _id: "$location", totalUsers: { $sum: 1 } } }
+]);
+
+Beneficios
+
+Al aplicar estas optimizaciones el query se vuelve más eficiente debido a:
+
+1. Indexado: El índice compuesto en status y location mejora la eficiencia del filtrado y agrupamiento.
+2. Projection: la etpa $project asegura que solo los datos necesarios sean procesados.
+3. Procesamiento eficiente de datos: La etapa $match se aplica primero reduciendo el número de documentos a procesar en etapas subsecuentes.
+4. $limit: So solo se requiere un número espcifico de datos, al aplicar $limit se detiene el procesamiento despues de obtener los datos requeridos.
